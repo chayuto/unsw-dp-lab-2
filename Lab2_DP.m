@@ -79,6 +79,26 @@ function btnInitialise_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+set(handles.textStatus,'string','Initializing...'); %update UI
+
+
+%% Setup parameters
+DaqName = 'Dev2';
+Fs = 40;
+SamplingSize = 2;
+
+
+%% DAQ Initialization----------------------- 
+info = daqhwinfo('nidaq')
+ai = analoginput('nidaq',DaqName)
+ao = analogoutput('nidaq',DaqName)
+%% Adding Channels-------------------------
+ addchannel(ai,0) %add GND ref Channel
+ addchannel(ai,1) %add V_Sense Channel
+ set(ai,'SampleRate',Fs) %set Sampling rate
+ set(ai,'SamplesPerTrigger',SamplingSize) %setup sampling Size
+ 
+ 
 
 % --- Executes on slider movement.
 function sliderInput_Callback(hObject, eventdata, handles)
