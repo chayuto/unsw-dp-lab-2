@@ -96,6 +96,11 @@ RShunt = 0.5;
 info = daqhwinfo('nidaq')
 ai = analoginput('nidaq',DaqName)
 ao = analogoutput('nidaq',DaqName)
+
+handles.ao = ao;
+% Save the change to the structure
+guidata(hObject,handles)
+
 %% Adding Channels-------------------------
  addchannel(ai,0) %add GND ref Channel
  addchannel(ai,1) %add V_Sense Channel
@@ -105,9 +110,12 @@ ao = analogoutput('nidaq',DaqName)
  set(ai,'SampleRate',Fs) %set Sampling rate
  set(ai,'SamplesPerTrigger',SamplingSize) %setup sampling Size
  
- running =1;
+ putsample(ao,5.1234);
  
- while (running)
+ handles.running =1;
+ guidata(hObject,handles)
+ 
+ while (handles.running)
      
       %% Acqurie data
     start(ai) % start the analog input channel
@@ -171,3 +179,13 @@ function btnSet_Callback(hObject, eventdata, handles)
 % hObject    handle to btnSet (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+%ao = handles.ao;
+%putsample(ao,3);
+
+Val = get(handles.sliderInput,'Value');
+display(Val)
+
+
+
+
