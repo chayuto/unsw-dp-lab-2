@@ -84,8 +84,12 @@ set(handles.textStatus,'string','Initializing...'); %update UI
 
 %% Setup parameters
 DaqName = 'Dev2';
-Fs = 40;
+Fs = 1000;
 SamplingSize = 2;
+
+%% analogue parameters
+DAGain = 10;
+RShunt = 0.5;
 
 
 %% DAQ Initialization----------------------- 
@@ -95,8 +99,42 @@ ao = analogoutput('nidaq',DaqName)
 %% Adding Channels-------------------------
  addchannel(ai,0) %add GND ref Channel
  addchannel(ai,1) %add V_Sense Channel
+ addchannel(ai,2) %add V_input Channel
+ addchannel(ai,3) %add SD_sense Channel
+ addchannel(ao,0) %add V_cmd out channet
  set(ai,'SampleRate',Fs) %set Sampling rate
  set(ai,'SamplesPerTrigger',SamplingSize) %setup sampling Size
+ 
+ running =1;
+ 
+ while (running)
+     
+      %% Acqurie data
+    start(ai) % start the analog input channel
+    [acquiredData,time] = getdata(ai); % sample some data
+    
+    GNDData = acquiredData(:,1); %get CH0 data
+    CH1Data = acquiredData(:,2); %get CH1 data
+    CH2Data = acquiredData(:,3); %get CH2 data
+    CH3Data = acquiredData(:,4); %get CH3 data
+    
+    senseData = mean(CH1Data - GNDData); %remove Ground baseline and store
+    cmdData = mean(CH2Data - GNDData); %remove Ground baseline and store
+    SDData = mean(CH3Data - GNDData); %remove Ground baseline and store
+     
+    I_sense = (senseData/ ( DAGain * RShunt) ) ;
+    
+    I_cmd = 0.300; % in amp
+    
+    V_out = (I_cmd * ( DAGain * RShunt) );
+     
+    I_sense_ma = (I_sense / 1000);
+    set(handles.textCurrentVal,'string',...
+            sprintf('%.2f mA',I_sense_ma ) );
+        
+    pause(0.25)
+ end
+ 
  
  
 
