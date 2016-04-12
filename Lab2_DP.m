@@ -22,7 +22,7 @@ function varargout = Lab2_DP(varargin)
 
 % Edit the above text to modify the response to help Lab2_DP
 
-% Last Modified by GUIDE v2.5 06-Apr-2016 09:27:33
+% Last Modified by GUIDE v2.5 12-Apr-2016 10:46:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,6 +54,8 @@ function Lab2_DP_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for Lab2_DP
 handles.output = hObject;
+handles.DAGain = 10;
+handles.RShunt = 0.5;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -83,13 +85,13 @@ set(handles.textStatus,'string','Initializing...'); %update UI
 
 
 %% Setup parameters
-DaqName = 'Dev2';
+DaqName = 'Dev3';
 Fs = 1000;
 SamplingSize = 2;
 
 %% analogue parameters
-DAGain = 10;
-RShunt = 0.5;
+DAGain =  handles.DAGain;
+RShunt = handles.RShunt;
 
 
 %% DAQ Initialization----------------------- 
@@ -98,7 +100,8 @@ ai = analoginput('nidaq',DaqName)
 ao = analogoutput('nidaq',DaqName)
 
 handles.ao = ao;
-% Save the change to the structure
+
+%% Save the change to the structure
 guidata(hObject,handles)
 
 %% Adding Channels-------------------------
@@ -109,8 +112,12 @@ guidata(hObject,handles)
  addchannel(ao,0) %add V_cmd out channet
  set(ai,'SampleRate',Fs) %set Sampling rate
  set(ai,'SamplesPerTrigger',SamplingSize) %setup sampling Size
+ set(ai,'InputType','SingleEnded');
  
- putsample(ao,5.1234);
+ putsample(ao,0);
+ 
+ set(handles.textStatus,'string','Initialized'); %update UI
+ 
  
  handles.running =1;
  guidata(hObject,handles)
@@ -129,16 +136,18 @@ guidata(hObject,handles)
     senseData = mean(CH1Data - GNDData); %remove Ground baseline and store
     cmdData = mean(CH2Data - GNDData); %remove Ground baseline and store
     SDData = mean(CH3Data - GNDData); %remove Ground baseline and store
+    
+    set(handles.textStatus3,'string',...
+            sprintf('Vo:%.2f V %.2f V %.2f V',senseData,cmdData,SDData) );
+        
      
     I_sense = (senseData/ ( DAGain * RShunt) ) ;
     
-    I_cmd = 0.300; % in amp
     
-    V_out = (I_cmd * ( DAGain * RShunt) );
      
-    I_sense_ma = (I_sense / 1000);
+    I_sense_ma = (I_sense * 1000);
     set(handles.textCurrentVal,'string',...
-            sprintf('%.2f mA',I_sense_ma ) );
+            sprintf('%.0f mA',I_sense_ma ) );
         
     pause(0.25)
  end
@@ -180,12 +189,18 @@ function btnSet_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%ao = handles.ao;
-%putsample(ao,3);
+ao = handles.ao;
 
-Val = get(handles.sliderInput,'Value');
-display(Val)
+DAGain =  handles.DAGain;
+RShunt = handles.RShunt;
 
+value =get(handles.sliderInput,'Value');
+currentValue = value * 300;
 
+I_cmd = currentValue/1000; % in amp
+    
+V_out = (I_cmd * ( DAGain * RShunt) );
 
-
+putsample(ao,V_out);
+set(handles.textStatus2,'string',...
+            sprintf('Vo:%.2f V',V_out) );
