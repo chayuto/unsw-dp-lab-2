@@ -22,7 +22,7 @@ function varargout = Lab2_DP(varargin)
 
 % Edit the above text to modify the response to help Lab2_DP
 
-% Last Modified by GUIDE v2.5 12-Apr-2016 10:46:51
+% Last Modified by GUIDE v2.5 20-Apr-2016 12:26:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,7 +55,7 @@ function Lab2_DP_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for Lab2_DP
 handles.output = hObject;
 handles.DAGain = 10;
-handles.RShunt = 0.5;
+handles.RShunt = 1;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -88,7 +88,7 @@ set(handles.textStatus,'string','Initializing...'); %update UI
 DaqName = 'Dev3';
 Fs = 1000;
 SamplingSize = 2;
-
+bufferSize = 150;
 %% analogue parameters
 DAGain =  handles.DAGain;
 RShunt = handles.RShunt;
@@ -100,6 +100,7 @@ ai = analoginput('nidaq',DaqName)
 ao = analogoutput('nidaq',DaqName)
 
 handles.ao = ao;
+handles.ai = ai;
 
 %% Save the change to the structure
 guidata(hObject,handles)
@@ -118,8 +119,10 @@ guidata(hObject,handles)
  
  set(handles.textStatus,'string','Initialized'); %update UI
  
- 
+ data = zeros(bufferSize,2); %databuffer
+  
  handles.running =1;
+ handles.data = data;
  guidata(hObject,handles)
  
  while (handles.running)
@@ -140,16 +143,35 @@ guidata(hObject,handles)
     set(handles.textStatus3,'string',...
             sprintf('Vo:%.2f V %.2f V %.2f V',senseData,cmdData,SDData) );
         
-     
+    if(SDData < 5)
+        set(handles.textShut,'string','SD: OK');
+    elseif(SDData >5)
+        set(handles.textShut,'string','SD: ACTIVATED');
+    else
+        set(handles.textShut,'string','');
+    end
+        
+     %% Manupulate data on to buffer 
+    data = handles.data;
+    inputSize = 1;
+    data(1:end-inputSize,:) = data(1+inputSize:end,:);
+    data(end-inputSize+1:end,:) = [senseData,cmdData];
+    handles.data = data;
+    guidata(hObject,handles)   
+        
     I_sense = (senseData/ ( DAGain * RShunt) ) ;
     
+    
+    plot(data,'parent',handles.axes1);
+    set(handles.axes1, 'YLim', [0,(4)]);
     
      
     I_sense_ma = (I_sense * 1000);
     set(handles.textCurrentVal,'string',...
             sprintf('%.0f mA',I_sense_ma ) );
-        
-    pause(0.25)
+    
+    
+    pause(0.02)
  end
  
  
@@ -204,3 +226,34 @@ V_out = (I_cmd * ( DAGain * RShunt) );
 putsample(ao,V_out);
 set(handles.textStatus2,'string',...
             sprintf('Vo:%.2f V',V_out) );
+
+
+% --- Executes on button press in btnForce.
+function btnForce_Callback(hObject, eventdata, handles)
+% hObject    handle to btnForce (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+ao = handles.ao;
+ai = handles.ai;
+
+DAGain =  handles.DAGain;
+RShunt = handles.RShunt;
+
+for currentValue = 200:3:350
+
+    I_cmd = currentValue/1000; % in amp
+
+    V_out = (I_cmd * ( DAGain * RShunt) );
+
+    putsample(ao,V_out);
+    set(handles.textStatus2,'string',...
+                sprintf('Vo:%.2f V',V_out) );
+   
+    pause(0.02)    
+end
+
+guidata(hObject,handles)
+        
+        
+        
