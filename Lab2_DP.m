@@ -1,3 +1,6 @@
+
+
+
 function varargout = Lab2_DP(varargin)
 % LAB2_DP MATLAB code for Lab2_DP.fig
 %      LAB2_DP, by itself, creates a new LAB2_DP or raises the existing
@@ -141,7 +144,7 @@ guidata(hObject,handles)
     SDData = mean(CH3Data - GNDData); %remove Ground baseline and store
     
     set(handles.textStatus3,'string',...
-            sprintf('Vo:%.2f V %.2f V %.2f V',senseData,cmdData,SDData) );
+            sprintf('V1:%.2f V2:%.2f V3:%.2f V',senseData,cmdData,SDData) );
         
     if(SDData < 5)
         set(handles.textShut,'string','SD: OK');
